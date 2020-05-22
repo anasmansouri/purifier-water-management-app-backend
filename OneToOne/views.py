@@ -1,0 +1,206 @@
+from django.core.exceptions import ObjectDoesNotExist
+from django.db import transaction
+from rest_framework.decorators import api_view, action, permission_classes
+from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
+
+from .serializers import *
+from .models import *
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status, viewsets
+from .serializers import StudentSerializer, RegistrationSerializer
+from django.contrib.auth.models import User
+import random
+from django.core.mail import send_mail
+from rest_framework import serializers
+
+from rest_framework.authtoken.views import ObtainAuthToken
+from rest_framework.authtoken.models import Token
+from django.contrib.auth import logout
+
+
+class StudentViewSet(viewsets.ModelViewSet):
+    """
+    A simple view set for viewing and editing profiles
+    """
+    queryset = Profile.objects.all()
+    serializer_class = StudentSerializer
+
+    def get_permissions(self):
+        """
+               Instantiates and returns the list of permissions that this view requires.
+               """
+        permission_classes = [IsAuthenticated]
+        return [permission() for permission in permission_classes]
+
+        # i gived all the permission to user now but i will change that later
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+@transaction.atomic
+def preregistration_view(request):
+    serializer = StudentSerializer(data=request.data)
+    data = {}
+    if serializer.is_valid():
+        profile = serializer.save()
+        data['response'] = 'successfully registered a new user'
+        data['username'] = profile.user.username
+        token = Token.objects.get(user=profile.user).key
+        data["token"] = token
+    else:
+        data = serializer.errors
+    return Response(data)
+
+
+@api_view(['put'])
+@permission_classes([AllowAny])
+@transaction.atomic
+def registration_view(request):
+    try:
+        if request.data["user"]["username"] is None or request.data["user"]["email"] is None or \
+                request.data["user"]["password"] is None:
+            raise serializers.ValidationError(
+                {'error': "you have to be sure that you field all the required informations "})
+    except KeyError:
+        raise serializers.ValidationError("you have to be sure that you field all the required informations ")
+    user = None
+    try:
+        user = User.objects.get(username=request.data["user"]["username"])
+    except  ObjectDoesNotExist:
+        raise serializers.ValidationError({'error': "there is no user with that user name in the database"})
+    serializer = RegistrationSerializer(user.profile, data=request.data)
+    data = {}
+    if serializer.is_valid():
+        print("{}".format("valid 5dmmate"))
+        profile = serializer.save()
+        data['response'] = 'successfully registered a new user'
+        data['username'] = profile.user.username
+        data['email'] = profile.user.email
+        token = Token.objects.get(user=profile.user).key
+        data["token"] = token
+        email_verification = EmailVerification.objects.create(username=request.data["user"]["username"],
+                                                              code_of_verification=str(random.randint(1000, 9999)))
+        send_mail('hello from osmosis', email_verification.code_of_verification,
+                  'osmosis.testing.app@gmail.com',
+                  [request.data["user"]["email"]],
+                  fail_silently=False)
+    else:
+        print("{}".format("valid ma5damach"))
+
+        data = serializer.errors
+    return Response(data)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@transaction.atomic
+def verify_email(request):
+    print(request.data)
+    code = ""
+    try:
+        code = request.data["code"]
+    except KeyError:
+        raise serializers.ValidationError("please check your email , we send a code there , and put here ")
+
+    if code == EmailVerification.objects.get(username=request.user.username).code_of_verification:
+        p = User.objects.get(username=request.user.username).profile
+        EmailVerification.objects.get(username=request.user.username).delete()
+        p.isconfirm = True
+        p.save()
+        return Response({"response": "email verified "})
+    else:
+        return Response({"error": "the code is wrong"})
+
+
+class StudentRecordView(APIView):
+    """
+    A class based view for creating and fetching student records
+    """
+
+    def get(self, format=None):
+        """
+        Get all the student records
+        :param format: Format of the student records to return to
+        :return: Returns a list of student records
+        """
+        students = Profile.objects.all()
+        serializer = StudentSerializer(students, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        """
+        Create a student record
+        :param format: Format of the student records to return to
+        :param request: Request object for creating student
+        :return: Returns a student record
+        """
+        serializer = StudentSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=ValueError):
+            serializer.create(validated_data=request.data)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.error_messages,
+                        status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@transaction.atomic
+def logout(request):
+    try:
+        request.user.auth_token.delete()
+    except (AttributeError, ObjectDoesNotExist):
+        pass
+    return Response({"success": "Successfully logged out."},
+                    status=status.HTTP_200_OK)
+
+
+class CustomAuthToken(ObtainAuthToken):
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data,
+                                           context={'request': request})
+        serializer.is_valid(raise_exception=True)
+
+        user = serializer.validated_data['user']
+        if user.profile.isconfirm is False:
+            raise serializers.ValidationError("please verify your email")
+
+        token, created = Token.objects.get_or_create(user=user)
+
+        return Response({
+            'token': token.key,
+            'user_id': user.pk,
+            'email': user.email,
+            'is_admin': user.is_staff
+        })
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+@transaction.atomic
+def forgotpassword(request):
+    # try:
+    invitationcode = ""
+    username = ""
+    user = ""
+    try:
+        invitationcode = request.data["invitationcode"]
+        username = request.data["username"]
+    except KeyError:
+        raise serializers.ValidationError("please enter your invitation code and your username")
+
+    try:
+        user = User.objects.get(username=username)
+        profile = Profile.objects.get(user=user, invitationcode=invitationcode)
+    except  ObjectDoesNotExist:
+        raise serializers.ValidationError({'error': "make sure that the username and the invitation code are correct"})
+
+    code = str(random.randint(1000, 999999999))
+    send_mail('hello from osmosis', "this is your password  now change it when you login in " + code,
+              'osmosis.testing.app@gmail.com',
+              [profile.user.email],
+              fail_silently=False)
+    profile.user.set_password(code)
+    profile.user.save()
+    return Response({"response": "we sent the new password in your email"})

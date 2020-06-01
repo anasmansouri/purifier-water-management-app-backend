@@ -24,7 +24,7 @@ DEBUG = True
 
 # TEMPLATE_DEBUG = True
 
-ALLOWED_HOSTS = ['192.168.1.4', '127.0.0.1']
+ALLOWED_HOSTS = ['192.168.1.10', '127.0.0.1']
 
 # Application definition
 

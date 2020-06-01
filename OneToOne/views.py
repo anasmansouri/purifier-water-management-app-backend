@@ -150,8 +150,8 @@ def logout(request):
     try:
         request.user.auth_token.delete()
     except (AttributeError, ObjectDoesNotExist):
-        pass
-    return Response({"success": "Successfully logged out."},
+        raise serializers.ValidationError({'error': "there something wrong there !"})
+    return Response({"response": "Successfully logged out."},
                     status=status.HTTP_200_OK)
 
 
@@ -164,7 +164,7 @@ class CustomAuthToken(ObtainAuthToken):
 
         user = serializer.validated_data['user']
         if user.profile.isconfirm is False:
-            raise serializers.ValidationError("please verify your email")
+            raise serializers.ValidationError({'error': "please verify your email !"})
 
         token, created = Token.objects.get_or_create(user=user)
 
@@ -197,10 +197,95 @@ def forgotpassword(request):
         raise serializers.ValidationError({'error': "make sure that the username and the invitation code are correct"})
 
     code = str(random.randint(1000, 999999999))
-    send_mail('hello from osmosis', "this is your password  now change it when you login in " + code,
+    send_mail('hello from osmosis', "this is your password" + code+"  now change it when you login in ",
               'osmosis.testing.app@gmail.com',
               [profile.user.email],
               fail_silently=False)
     profile.user.set_password(code)
     profile.user.save()
     return Response({"response": "we sent the new password in your email"})
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@transaction.atomic
+def updada_password(request):
+    print(request.data)
+    current_password = ""
+    new_password = ""
+    new_password2 = ""
+    try:
+        current_password = request.data["current_password"]
+        new_password = request.data["new_password"]
+        new_password2 = request.data["new_password2"]
+    except KeyError:
+        raise serializers.ValidationError({'error': "there something wrong there !"})
+
+    if not request.user.check_password(current_password):
+        raise serializers.ValidationError({'error': "your password is wrong "})
+    else:
+        if len(new_password) < 8:
+            raise serializers.ValidationError({'error': "the lenght of the new password must be greather than 8"})
+        elif new_password != new_password2:
+            raise serializers.ValidationError({'error': "password1 and password 2 must match"})
+        else:
+            request.user.set_password(new_password)
+            request.user.save()
+            return Response({"response": "the password has been updated successfully"})
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@transaction.atomic
+def updada_contact_name(request):
+    print(request.data)
+    password = ""
+    new_contact_name = ""
+    try:
+        password = request.data["password"]
+        new_contact_name = request.data["new_contact_name"]
+    except KeyError:
+        raise serializers.ValidationError({'error': "there something wrong there !"})
+
+    if not request.user.check_password(password):
+        raise serializers.ValidationError({'error': "your password is wrong "})
+    else:
+        profile = Profile.objects.get(user=request.user)
+        profile.contactname = new_contact_name
+        profile.save()
+        return Response({"response": "your contact name has been updated successfully"})
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@transaction.atomic
+def updada_email_address(request):
+    print(request.data)
+    password = ""
+    current_email = ""
+    new_email = ""
+    try:
+        password = request.data["password"]
+        current_email = request.data["current_email"]
+        new_email = request.data["new_email"]
+    except KeyError:
+        raise serializers.ValidationError({'error': "there something wrong there !"})
+
+    if not request.user.check_password(password):
+        raise serializers.ValidationError({'error': "your password is wrong "})
+
+    elif current_email != request.user.email:
+        raise serializers.ValidationError({'error': "your email is wrong"})
+    else:
+        request.user.email = new_email
+        email_verification = EmailVerification.objects.create(username=request.user.username,
+                                                              code_of_verification=str(random.randint(1000, 9999)))
+        send_mail('hello from osmosis', email_verification.code_of_verification,
+                  'osmosis.testing.app@gmail.com',
+                  [new_email],
+                  fail_silently=False)
+        p = User.objects.get(username=request.user.username).profile
+        request.user.save()
+        p.isconfirm = False
+        p.save()
+        return Response({"response": "your email address has been updated successfully"})

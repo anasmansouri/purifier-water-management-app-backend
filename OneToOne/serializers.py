@@ -11,7 +11,7 @@ class UserSerializer(serializers.ModelSerializer):
             'username': {
                 'validators': [UnicodeUsernameValidator()],
             },
-            'password': {'required': False}
+            'password': {'required': False,'write_only': True}
         }
 
 

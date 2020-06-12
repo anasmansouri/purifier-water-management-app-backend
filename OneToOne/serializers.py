@@ -24,9 +24,9 @@ class StudentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
         fields = ('user', 'contactname', 'billingaddress1',
-                  'installaddress1', 'billingaddress2',
-                  'installaddress2', 'contactno', 'mobile', 'invitationcode', 'source',
-                  'comment')
+                  'billingaddress2',
+                  'contactno', 'mobile', 'invitationcode', 'source',
+                  'comment', 'joindate','isconfirm')
 
     def create(self, validated_data):
         """
@@ -84,6 +84,5 @@ class RegistrationSerializer(serializers.ModelSerializer):
         # instance.user.set_password(validated_data["password"])
         instance.save()
         return instance
-
 
 # machine

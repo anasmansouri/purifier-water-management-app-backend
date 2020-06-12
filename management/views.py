@@ -18,6 +18,8 @@ from rest_framework import serializers
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import logout
+from rest_framework.filters import SearchFilter, OrderingFilter
+
 
 # Create your views here.
 
@@ -30,6 +32,8 @@ class MachineViewSet(viewsets.ModelViewSet):
     """
     queryset = Machine.objects.all()
     serializer_class = MachineSerializer
+    filter_backends = (SearchFilter, OrderingFilter)
+    search_fields = ['machineid', 'producttype', 'user__username']
 
     def get_permissions(self):
         """
@@ -63,7 +67,8 @@ class MainPackViewSet(viewsets.ViewSet):
 
     @permission_classes([IsAuthenticated])
     def create(self, request):
-        # i catch those exception to be sure that the request contain the price and the exfilltermonth and the exfiltervolume
+        # i catch those exception to be sure that the request contain the price and the exfilltermonth and the
+        # exfiltervolume
         try:
             packagecode = request.data["packagecode"]
         except  KeyError:
@@ -92,6 +97,7 @@ class TechnicianViewSet(viewsets.ViewSet):
     """
     A simple ViewSet for listing or retrieving users.
     """
+    filterset_fields = ['staffcode']
 
     def create(self, request):
         pass
@@ -198,6 +204,9 @@ class CaseViewSet(viewsets.ModelViewSet):
     """
     queryset = Case.objects.all()
     serializer_class = CaseSerializer
+
+    filter_backends = (SearchFilter, OrderingFilter)
+    search_fields = ['casetype', 'scheduledate', 'machines__machineid']
 
     def get_permissions(self):
         """

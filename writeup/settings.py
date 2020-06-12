@@ -24,7 +24,7 @@ DEBUG = True
 
 # TEMPLATE_DEBUG = True
 
-ALLOWED_HOSTS = ['192.168.1.10', '127.0.0.1','192.168.1.12']
+ALLOWED_HOSTS = ['192.168.1.3', '127.0.0.1', '192.168.1.12', '192.168.1.4']
 
 # Application definition
 
@@ -57,7 +57,8 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
-    ]
+    ],
+    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend']
 }
 
 ROOT_URLCONF = 'writeup.urls'

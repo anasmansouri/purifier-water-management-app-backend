@@ -1,8 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
 
-# Create your models here.
 
+# Create your models here.
 
 
 class MainPack(models.Model):
@@ -40,7 +40,7 @@ class Machine(models.Model):
 
 
 class Filter(models.Model):
-    filtercode = models.CharField(max_length=30,unique=True)
+    filtercode = models.CharField(max_length=30, unique=True)
     filtername = models.CharField(max_length=30)
     filterdetail = models.CharField(max_length=300)
     price = models.FloatField()
@@ -60,7 +60,6 @@ class Technician(models.Model):
         return self.staffshort
 
 
-
 class Case(models.Model):
     CASE_TYPE = [('Filter replacement', 'Filter replacement'), ('Urgent Repair', 'Urgent Repair'),
                  ('Installation', 'Installation'), ('Checking', 'Checking')]
@@ -72,18 +71,16 @@ class Case(models.Model):
     suggest = models.TextField(max_length=100, blank=True)
     comment = models.TextField(max_length=100, blank=True)
     iscompleted = models.BooleanField(default=False, blank=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    # user = models.ForeignKey(User, on_delete=models.CASCADE)
     filters = models.ManyToManyField(Filter, blank=True)
     handledby = models.ForeignKey(Technician, on_delete=models.CASCADE)
 
-    def __str__(self):
-        return "%s %s " % (self.casetype, self.customer.username)
 
-    #def get_absolute_url(self):
+    # def get_absolute_url(self):
     #    return reverse("crm:caselist")
 
-    def get_machine(self):
-        return ",".join([str(p) for p in self.machine.all()])
+    # def get_machine(self):
+    #     return ",".join([str(p) for p in self.machine.all()])
 
-    def get_filter(self):
-        return " / ".join([str(f) for f in self.filter.all()])
+    # def get_filter(self):
+    #     return " / ".join([str(f) for f in self.filter.all()])

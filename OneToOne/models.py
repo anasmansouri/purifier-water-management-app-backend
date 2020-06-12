@@ -12,13 +12,13 @@ class Profile(models.Model):
     Note: A OneToOne relation is established for each student with User model.
     """
     SOURCE_CHOICES = (
-        ('Online', 'Online'), ('Referral', ' Referral'), ('Old', 'Old Customer'), ('Phone ', ' Phone Call'))
+        ('Online', 'Online'), ('Referral', ' Referral'), ('Old', 'Old Customer'), ('Phone', ' Phone Call'))
     user = models.OneToOneField(User, on_delete=models.CASCADE, )
     contactname = models.CharField(max_length=100)
     billingaddress1 = models.TextField(max_length=100)
-    installaddress1 = models.TextField(max_length=100)
+    # installaddress1 = models.TextField(max_length=100)
     billingaddress2 = models.TextField(max_length=100, blank=True, null=True)
-    installaddress2 = models.TextField(max_length=100, blank=True, null=True)
+    # installaddress2 = models.TextField(max_length=100, blank=True, null=True)
     contactno = models.CharField(max_length=20)
     mobile = models.CharField(max_length=20, blank=True)
     invitationcode = models.CharField(max_length=20, unique=True)

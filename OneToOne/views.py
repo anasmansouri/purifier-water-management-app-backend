@@ -18,6 +18,7 @@ from rest_framework import serializers
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import logout
+from rest_framework.filters import SearchFilter, OrderingFilter
 
 
 class StudentViewSet(viewsets.ModelViewSet):
@@ -114,34 +115,22 @@ def verify_email(request):
         return Response({"error": "the code is wrong"})
 
 
-class StudentRecordView(APIView):
+# only for listing
+class ProfileView(viewsets.ModelViewSet):
     """
-    A class based view for creating and fetching student records
+    A simple view set for viewing and editing profiles
     """
+    queryset = Profile.objects.all()
+    serializer_class = StudentSerializer
+    filter_backends = (SearchFilter, OrderingFilter)
+    search_fields = ['mobile', 'user__username', 'contactname', 'contactno', 'invitationcode', 'joindate', 'source']
 
-    def get(self, format=None):
+    def get_permissions(self):
         """
-        Get all the student records
-        :param format: Format of the student records to return to
-        :return: Returns a list of student records
-        """
-        students = Profile.objects.all()
-        serializer = StudentSerializer(students, many=True)
-        return Response(serializer.data)
-
-    def post(self, request):
-        """
-        Create a student record
-        :param format: Format of the student records to return to
-        :param request: Request object for creating student
-        :return: Returns a student record
-        """
-        serializer = StudentSerializer(data=request.data)
-        if serializer.is_valid(raise_exception=ValueError):
-            serializer.create(validated_data=request.data)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.error_messages,
-                        status=status.HTTP_400_BAD_REQUEST)
+               Instantiates and returns the list of permissions that this view requires.
+               """
+        permission_classes = [IsAuthenticated]
+        return [permission() for permission in permission_classes]
 
 
 @api_view(['POST'])
@@ -164,14 +153,20 @@ class CustomAuthToken(ObtainAuthToken):
         serializer.is_valid(raise_exception=True)
 
         user = serializer.validated_data['user']
-        if user.profile.isconfirm is False:
-            raise serializers.ValidationError({'error': "please verify your email !"})
+        pk = -1
+        if not user.is_staff:
+            if user.profile.isconfirm is False:
+                raise serializers.ValidationError({'error': "please verify your email !"})
+            else:
+                pk = Profile.objects.get(user=user).pk
+        else:
+            pk = user.pk
 
         token, created = Token.objects.get_or_create(user=user)
 
         return Response({
             'token': token.key,
-            'user_id': user.pk,
+            'user_id': pk,
             'email': user.email,
             'is_admin': user.is_staff
         })
@@ -290,5 +285,3 @@ def updada_email_address(request):
         p.isconfirm = False
         p.save()
         return Response({"response": "your email address has been updated successfully"})
-
-

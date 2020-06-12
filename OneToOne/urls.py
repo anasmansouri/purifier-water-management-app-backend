@@ -7,7 +7,7 @@ from rest_framework.urlpatterns import format_suffix_patterns
 from OneToOne import views
 
 router = routers.SimpleRouter()
-router.register(r'accounts', views.StudentViewSet, basename="students_list")
+router.register(r'accounts', views.ProfileView, basename="students_list")
 
 urlpatterns = [
     path('prerigstration/', views.preregistration_view),

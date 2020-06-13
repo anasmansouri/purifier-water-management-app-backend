@@ -93,18 +93,60 @@ class MainPackViewSet(viewsets.ViewSet):
         return Response(MainPackSerializer(main_pack).data)
 
 
+@api_view(['PUT'])
+@permission_classes([IsAdminUser])
+@transaction.atomic
+def update_technicien_info(request):
+    # try:
+    staffcode = ""
+    staffshort = ""
+    staffname = ""
+    staffcontact = ""
+    email = ""
+    try:
+        staffcode = request.data["staffcode"]
+        staffshort = request.data["staffshort"]
+        staffname = request.data["staffname"]
+        staffcontact = request.data["staffcontact"]
+        email = request.data["email"]
+
+    except KeyError:
+        raise serializers.ValidationError({'error': "please make sure to fill all informations"})
+    if staffname == "" or staffshort == "" or staffname == "" or staffcontact == "" or email == "":
+        raise serializers.ValidationError({'error': "please make sure to fill all informations"})
+    try:
+        technician = Technician.objects.get(staffcode=staffcode)
+
+    except  ObjectDoesNotExist:
+        raise serializers.ValidationError({'error': "make sure that the staffcode is correct"})
+
+    technician.staffcontact = staffcontact
+    technician.staffshort = staffshort
+    technician.staffname = staffname
+    technician.email = email
+    technician.save()
+    serializer = TechnicianSerializer(technician)
+    return Response(serializer.data)
+
+
 class TechnicianViewSet(viewsets.ViewSet):
     """
     A simple ViewSet for listing or retrieving users.
     """
-    filterset_fields = ['staffcode']
 
     def create(self, request):
         pass
 
     @permission_classes([IsAuthenticated, ])
     def list(self, request):
-        queryset = Technician.objects.all()
+        search = request.GET.get('search', '')
+        queryset = list(Technician.objects.filter(staffcode__icontains=search))
+        print(queryset)
+        queryset.extend(list(Technician.objects.filter(staffshort__icontains=search)))
+        queryset.extend(list(Technician.objects.filter(staffname__icontains=search)))
+        queryset.extend(list(Technician.objects.filter(staffcontact__icontains=search)))
+        queryset.extend(list(Technician.objects.filter(email__icontains=search)))
+        queryset = list(dict.fromkeys(queryset))
         serializer = TechnicianSerializer(queryset, many=True)
         return Response(serializer.data)
 

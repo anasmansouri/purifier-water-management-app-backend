@@ -14,6 +14,6 @@ router.register(r'Technicians', views.TechnicianViewSet, basename="technicians_l
 router.register(r'Filters', views.FilterViewSet, basename="filters_list")
 router.register(r'Cases', views.CaseViewSet, basename="cases_list")
 
-urlpatterns = [
+urlpatterns = [path('update_technicien_info/', views.update_technicien_info),
 ]
 urlpatterns += router.urls

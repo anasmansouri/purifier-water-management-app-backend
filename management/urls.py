@@ -15,5 +15,6 @@ router.register(r'Filters', views.FilterViewSet, basename="filters_list")
 router.register(r'Cases', views.CaseViewSet, basename="cases_list")
 
 urlpatterns = [path('update_technicien_info/', views.update_technicien_info),
-]
+               path('update_main_pack_info/', views.update_main_pack_info),
+               ]
 urlpatterns += router.urls

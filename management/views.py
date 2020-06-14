@@ -45,6 +45,40 @@ class MachineViewSet(viewsets.ModelViewSet):
         # i gived all the permission to user now but i will change that later
 
 
+@api_view(['PUT'])
+@permission_classes([IsAdminUser])
+@transaction.atomic
+def update_main_pack_info(request):
+    packagecode = ""
+    price = ""
+    exfiltermonth = ""
+    exfiltervolume = ""
+    packagedetail = ""
+    try:
+        packagecode = request.data["packagecode"]
+        price = request.data["price"]
+        exfiltermonth = request.data["exfiltermonth"]
+        exfiltervolume = request.data["exfiltervolume"]
+        packagedetail = request.data["packagedetail"]
+
+    except KeyError:
+        raise serializers.ValidationError({'error': "please make sure to fill all informations"})
+    if packagecode == "" or price == "" or exfiltermonth == "" or exfiltervolume == "":
+        raise serializers.ValidationError({'error': "please make sure to fill all informations"})
+    try:
+        main_pack = MainPack.objects.get(packagecode=packagecode)
+
+    except  ObjectDoesNotExist:
+        raise serializers.ValidationError({'error': "make sure that the packagecode is correct"})
+
+    main_pack.packagedetail = packagedetail
+    main_pack.price = price
+    main_pack.exfiltermonth = exfiltermonth
+    main_pack.exfiltermonth = exfiltermonth
+    main_pack.save()
+    serializer = MainPackSerializer(main_pack)
+    return Response(serializer.data)
+
 class MainPackViewSet(viewsets.ViewSet):
     """
     A simple ViewSet for listing or retrieving users.
@@ -55,7 +89,14 @@ class MainPackViewSet(viewsets.ViewSet):
 
     @permission_classes([IsAuthenticated, ])
     def list(self, request):
-        queryset = MainPack.objects.all()
+        search = request.GET.get('search', '')
+        queryset = list(MainPack.objects.filter(packagecode__icontains=search))
+        print(queryset)
+        queryset.extend(list(MainPack.objects.filter(price__icontains=search)))
+        queryset.extend(list(MainPack.objects.filter(exfiltermonth__icontains=search)))
+        queryset.extend(list(MainPack.objects.filter(exfiltervolume__icontains=search)))
+        queryset.extend(list(MainPack.objects.filter(packagedetail__icontains=search)))
+        queryset = list(dict.fromkeys(queryset))
         serializer = MainPackSerializer(queryset, many=True)
         return Response(serializer.data)
 

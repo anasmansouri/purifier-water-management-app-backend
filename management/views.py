@@ -74,10 +74,11 @@ def update_main_pack_info(request):
     main_pack.packagedetail = packagedetail
     main_pack.price = price
     main_pack.exfiltermonth = exfiltermonth
-    main_pack.exfiltermonth = exfiltermonth
+    main_pack.exfiltervolume = exfiltervolume
     main_pack.save()
     serializer = MainPackSerializer(main_pack)
     return Response(serializer.data)
+
 
 class MainPackViewSet(viewsets.ViewSet):
     """
@@ -246,7 +247,13 @@ class FilterViewSet(viewsets.ViewSet):
 
     @permission_classes([IsAuthenticated, ])
     def list(self, request):
-        queryset = Filter.objects.all()
+        search = request.GET.get('search', '')
+        queryset = list(Filter.objects.filter(filtercode__icontains=search))
+        print(queryset)
+        queryset.extend(list(Filter.objects.filter(filtername__icontains=search)))
+        queryset.extend(list(Filter.objects.filter(filterdetail__icontains=search)))
+        queryset.extend(list(Filter.objects.filter(price__icontains=search)))
+        queryset = list(dict.fromkeys(queryset))
         serializer = FilterSerializer(queryset, many=True)
         return Response(serializer.data)
 
@@ -279,6 +286,39 @@ class FilterViewSet(viewsets.ViewSet):
             raise serializers.ValidationError({'error': "please enter the price of the filter"})
         filter = FilterSerializer.create(FilterSerializer(), validated_data=request.data)
         return Response(FilterSerializer(filter).data)
+
+
+@api_view(['PUT'])
+@permission_classes([IsAdminUser])
+@transaction.atomic
+def update_filter_info(request):
+    filtercode = ""
+    price = ""
+    filtername = ""
+    filterdetail = ""
+
+    try:
+        filtercode = request.data["filtercode"]
+        price = request.data["price"]
+        filtername = request.data["filtername"]
+        filterdetail = request.data["filterdetail"]
+    except KeyError:
+        raise serializers.ValidationError({'error': "please make suuurre to fill all informations"})
+    if filtercode == "" or price == "" or filtername == "":
+        raise serializers.ValidationError({'error': "please make s2222ure to fill all informations"})
+    try:
+        filter = Filter.objects.get(filtercode=filtercode)
+
+    except  ObjectDoesNotExist:
+        raise serializers.ValidationError({'error': "make sure that the filter code is correct"})
+
+    filter.filtercode = filtercode
+    filter.price = price
+    filter.filtername = filtername
+    filter.filterdetail = filterdetail
+    filter.save()
+    serializer = FilterSerializer(filter)
+    return Response(serializer.data)
 
 
 class CaseViewSet(viewsets.ModelViewSet):

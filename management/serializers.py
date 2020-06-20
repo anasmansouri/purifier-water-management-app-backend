@@ -97,29 +97,22 @@ class MachineSerializer(serializers.ModelSerializer):
         }
 
     def create(self, validated_data):
-        """
-        Overriding the default create method of the Model serializer.
-        :param validated_data: data containing all the details of machine
-        :return: returns a successfully created machine record
-        """
         try:
-            user_data = validated_data.pop('user')
-        except  KeyError:
-            raise serializers.ValidationError({'error': "please enter the user fileds"})
-        try:
-            main_pack_data = validated_data.pop('main_pack')
-        except  KeyError:
-            raise serializers.ValidationError({'error': "please enter the main pack fileds"})
+            machineid = validated_data["machineid"]
+            producttype = validated_data["producttype"]
+            user = validated_data["user"]
+            main_pack = validated_data["main_pack"]
+            installaddress1 = validated_data["installaddress1"]
+            price = validated_data["price"]
+        except KeyError:
+            raise serializers.ValidationError({'error': "please make sure to fill all informations"})
+        if machineid == "" or price == "" or producttype == "" or user == "" or main_pack =="" or installaddress1 == "":
+            raise serializers.ValidationError({'error': "please make sure to fill all informations"})
+        if Machine.objects.filter(machineid=validated_data["machineid"]).exists():
+            raise serializers.ValidationError({'error': 'there is a machine with the same machine id'})
 
-        if User.objects.filter(username=user_data["username"]).exists() and MainPack.objects.filter(
-                packagecode=main_pack_data["packagecode"]).exists():
-            user = User.objects.get(username=user_data["username"])
-            main_pack = MainPack.objects.get(packagecode=main_pack_data["packagecode"])
-            machine, created = Machine.objects.update_or_create(user=user, main_pack=main_pack,
-                                                                **validated_data)
-            return machine
-        else:
-            raise serializers.ValidationError({'error': "there is something wrong there"})
+        machine, created = Machine.objects.update_or_create(**validated_data)
+        return machine
 
     # this not tested yet
     def update(self, instance, validated_data):

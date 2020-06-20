@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 
 
 # Create your models here.
+from OneToOne.models import Profile
 
 
 class MainPack(models.Model):
@@ -20,20 +21,20 @@ class MainPack(models.Model):
 
 class Machine(models.Model):
     PRODUCT_CHOICES = (('WPU', 'Water Purifier'), ('U', 'Under Sink'), ('F', 'Filter'))
-    user = models.ForeignKey(User, on_delete=models.CASCADE, default='')
+    user = models.ForeignKey(Profile, on_delete=models.CASCADE, default='')
     machineid = models.CharField(max_length=100, unique=True)
     installaddress1 = models.TextField(max_length=100)
     installaddress2 = models.TextField(max_length=300, blank=True)
     photoncode = models.CharField(max_length=100)
-    mac = models.CharField(max_length=100, blank=True)
+    mac = models.CharField(max_length=100, blank=True,unique=True)
     main_pack = models.ForeignKey(MainPack, on_delete=models.CASCADE)
     installdate = models.DateField(null=True, blank=True, auto_now_add=True)
     nextservicedate = models.DateField(null=True, blank=True)
     producttype = models.CharField(max_length=3, choices=PRODUCT_CHOICES)
     price = models.FloatField()
 
-    def __str__(self):
-        return "%s %s " % (self.machineid, self.machinetype)
+    # def __str__(self):
+    #    return "%s %s " % (self.machineid, self.machinetype)
 
     def get_period(self):
         return "%s " % self.maintenance.exfiltermonth

@@ -24,7 +24,7 @@ DEBUG = True
 
 # TEMPLATE_DEBUG = True
 
-ALLOWED_HOSTS = ['192.168.1.3', '127.0.0.1', '192.168.1.12', '192.168.1.4']
+ALLOWED_HOSTS = ['192.168.1.10', '192.168.1.3','192.168.1.4', '127.0.0.1', '192.168.1.12', '192.168.1.4', 'anasmansouri.ddns.net', '192.168.1.5',]
 
 # Application definition
 

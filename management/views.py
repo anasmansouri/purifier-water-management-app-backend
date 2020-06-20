@@ -19,10 +19,10 @@ from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import logout
 from rest_framework.filters import SearchFilter, OrderingFilter
+from OneToOne.serializers import StudentSerializer
 
 
 # Create your views here.
-
 # machine
 
 
@@ -33,7 +33,7 @@ class MachineViewSet(viewsets.ModelViewSet):
     queryset = Machine.objects.all()
     serializer_class = MachineSerializer
     filter_backends = (SearchFilter, OrderingFilter)
-    search_fields = ['machineid', 'producttype', 'user__username']
+    search_fields = ['machineid', 'producttype', 'mac', 'main_pack']
 
     def get_permissions(self):
         """
@@ -41,8 +41,34 @@ class MachineViewSet(viewsets.ModelViewSet):
                """
         permission_classes = [IsAuthenticated]
         return [permission() for permission in permission_classes]
-
         # i gived all the permission to user now but i will change that later
+
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+@transaction.atomic
+def machine_search(request):
+    search = request.GET.get('search', '')
+
+    queryset = list(Machine.objects.filter(machineid__icontains=search))
+
+    queryset.extend(list(Machine.objects.filter(mac__icontains=search)))
+    queryset.extend(list(Machine.objects.filter(producttype__icontains=search)))
+    queryset.extend(list(Machine.objects.filter(price__icontains=search)))
+    queryset.extend(list(Machine.objects.filter(installdate__icontains=search)))
+    users = User.objects.filter(username__icontains=search)
+    if len(users) != 0:
+        for user in users:
+            if not user.is_staff:
+                queryset.extend(list(Machine.objects.filter(user=user.profile)))
+
+    queryset = list(dict.fromkeys(queryset))  # remounve deplicated items
+    serializer = MachineSerializer(queryset, many=True)
+    test = serializer.data
+    for i in test:
+        i["user"] = Profile.objects.get(pk=i["user"]).user.username
+        print("{}".format(i["user"]))
+    return Response(serializer.data)
 
 
 @api_view(['PUT'])
@@ -339,3 +365,25 @@ class CaseViewSet(viewsets.ModelViewSet):
         return [permission() for permission in permission_classes]
 
         # i gived all the permission to user now but i will change that later
+
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+@transaction.atomic
+def client_name_and_id(request):
+    try:
+        clients = User.objects.all()
+        li = []
+        di = {}
+        for client in clients:
+            if not client.is_staff:
+                di["username"] = client.username
+                di["id"] = client.profile.pk
+                li.append(di.copy())
+                di.clear()
+    except:
+        raise Response({"error": "there is something wrong"})
+    print("lajflsjflskad")
+    return Response(li)
+
+

@@ -65,6 +65,7 @@ class MachineSerializer(serializers.ModelSerializer):
     """
     A MachineSerializer serializer to return the student details
     """
+
     # user = UserSerializer(required=True)
     # main_pack = MainPackSerializer(required=True)
 
@@ -106,7 +107,7 @@ class MachineSerializer(serializers.ModelSerializer):
             price = validated_data["price"]
         except KeyError:
             raise serializers.ValidationError({'error': "please make sure to fill all informations"})
-        if machineid == "" or price == "" or producttype == "" or user == "" or main_pack =="" or installaddress1 == "":
+        if machineid == "" or price == "" or producttype == "" or user == "" or main_pack == "" or installaddress1 == "":
             raise serializers.ValidationError({'error': "please make sure to fill all informations"})
         if Machine.objects.filter(machineid=validated_data["machineid"]).exists():
             raise serializers.ValidationError({'error': 'there is a machine with the same machine id'})
@@ -133,7 +134,7 @@ class CaseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Case
-        fields = ('machines', 'casetype', 'scheduledate', 'time', 'action',
+        fields = ('case_id','machines', 'casetype', 'scheduledate', 'time', 'action',
                   'suggest', 'comment',
                   'iscompleted',  # 'user',
                   'filters', 'handledby')
@@ -149,6 +150,13 @@ class CaseSerializer(serializers.ModelSerializer):
         machines_data = validated_data.pop('machines')
         filters_data = validated_data.pop('filters')
         handledby_data = validated_data.pop('handledby')
+        casetype = validated_data["casetype"]
+        scheduledate = validated_data["scheduledate"]
+        time = validated_data["time"]
+        action = validated_data["action"]
+        suggest = validated_data["suggest"]
+        comment = validated_data["comment"]
+        iscompleted = validated_data["iscompleted"]
 
         for machine_data in machines_data:
             if not Machine.objects.filter(machineid=machine_data["machineid"]).exists():
@@ -175,7 +183,13 @@ class CaseSerializer(serializers.ModelSerializer):
         technician = Technician.objects.get(staffcode=handledby_data["staffcode"])
 
         case, created = Case.objects.update_or_create(handledby=technician,
-                                                      **validated_data)
+                                                      casetype=casetype,
+                                                      scheduledate=scheduledate,
+                                                      time=time,
+                                                      action=action,
+                                                      suggest=suggest,
+                                                      comment=comment,
+                                                      iscompleted=iscompleted)
         case.save()
         # m = Machine.objects.get(machineid="0010")
         # case.machines.add(m)

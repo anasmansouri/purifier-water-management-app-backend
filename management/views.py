@@ -14,7 +14,6 @@ from django.contrib.auth.models import User
 import random
 from django.core.mail import send_mail
 from rest_framework import serializers
-
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import logout
@@ -23,8 +22,6 @@ from OneToOne.serializers import StudentSerializer
 
 
 # Create your views here.
-# machine
-
 
 class MachineViewSet(viewsets.ModelViewSet):
     """
@@ -49,13 +46,12 @@ class MachineViewSet(viewsets.ModelViewSet):
 @transaction.atomic
 def machine_search(request):
     search = request.GET.get('search', '')
-
     queryset = list(Machine.objects.filter(machineid__icontains=search))
-
     queryset.extend(list(Machine.objects.filter(mac__icontains=search)))
     queryset.extend(list(Machine.objects.filter(producttype__icontains=search)))
     queryset.extend(list(Machine.objects.filter(price__icontains=search)))
     queryset.extend(list(Machine.objects.filter(installdate__icontains=search)))
+    queryset.extend(list(Machine.objects.filter(nextservicedate__icontains=search)))
     users = User.objects.filter(username__icontains=search)
     if len(users) != 0:
         for user in users:
@@ -68,6 +64,81 @@ def machine_search(request):
     for i in test:
         i["user"] = Profile.objects.get(pk=i["user"]).user.username
         print("{}".format(i["user"]))
+    return Response(serializer.data)
+
+
+@api_view(['PUT'])
+@permission_classes([IsAdminUser])
+@transaction.atomic
+def update_machine_info(request):
+    # try:
+    machineid = ""
+    installaddress1 = ""
+    installaddress2 = ""
+    nextservicedate = ""
+    try:
+        machineid = request.data["machineid"]
+        installaddress1 = request.data["installaddress1"]
+        installaddress2 = request.data["installaddress2"]
+        nextservicedate = request.data["nextservicedate"]
+
+    except KeyError:
+        raise serializers.ValidationError({'error': "please make sure to fill all informations"})
+    if machineid == "" or installaddress1 == "" or nextservicedate == "":
+        raise serializers.ValidationError({'error': "please make sure to fill all informations"})
+    try:
+        machine = Machine.objects.get(machineid=machineid)
+
+    except  ObjectDoesNotExist:
+        raise serializers.ValidationError({'error': "make sure that the machine id is correct"})
+
+    machine.installaddress1 = installaddress1
+    machine.installaddress2 = installaddress2
+    machine.nextservicedate = nextservicedate
+    machine.save()
+    serializer = MachineSerializer(machine)
+    return Response(serializer.data)
+
+
+@api_view(['PUT'])
+@permission_classes([IsAdminUser])
+@transaction.atomic
+def update_case_info(request):
+    case_id = ""
+    scheduledate = ""
+    time = ""
+    action = ""
+    suggest = ""
+    comment = ""
+    iscompleted = ""
+    try:
+        case_id = request.data["case_id"]
+        scheduledate = request.data["scheduledate"]
+        time = request.data["time"]
+        action = request.data["action"]
+        suggest = request.data["suggest"]
+        comment = request.data["comment"]
+        iscompleted = request.data["iscompleted"]
+
+
+    except KeyError:
+        raise serializers.ValidationError({'error': "please make suuuuure to fill all informations"})
+    if case_id == "" or scheduledate == "" or time == "" or iscompleted=="":
+        raise serializers.ValidationError({'error': "please make s to fill all informations"})
+    try:
+        case = Case.objects.get(case_id=case_id)
+
+    except  ObjectDoesNotExist:
+        raise serializers.ValidationError({'error': "make sure that the case id is correct"})
+
+    case.scheduledate = scheduledate
+    case.time = time
+    case.iscompleted = iscompleted
+    case.action = action
+    case.suggest=suggest
+    case.comment = comment
+    case.save()
+    serializer = CaseSerializer(case)
     return Response(serializer.data)
 
 
@@ -355,7 +426,7 @@ class CaseViewSet(viewsets.ModelViewSet):
     serializer_class = CaseSerializer
 
     filter_backends = (SearchFilter, OrderingFilter)
-    search_fields = ['casetype', 'scheduledate', 'machines__machineid']
+    search_fields = ['scheduledate', 'casetype', 'machines__machineid']
 
     def get_permissions(self):
         """
@@ -385,5 +456,3 @@ def client_name_and_id(request):
         raise Response({"error": "there is something wrong"})
     print("lajflsjflskad")
     return Response(li)
-
-

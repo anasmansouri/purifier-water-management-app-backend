@@ -62,6 +62,7 @@ class Technician(models.Model):
 
 
 class Case(models.Model):
+    case_id = models.AutoField(primary_key=True)
     CASE_TYPE = [('Filter replacement', 'Filter replacement'), ('Urgent Repair', 'Urgent Repair'),
                  ('Installation', 'Installation'), ('Checking', 'Checking')]
     machines = models.ManyToManyField(Machine)
@@ -75,6 +76,7 @@ class Case(models.Model):
     # user = models.ForeignKey(User, on_delete=models.CASCADE)
     filters = models.ManyToManyField(Filter, blank=True)
     handledby = models.ForeignKey(Technician, on_delete=models.CASCADE)
+
 
 
     # def get_absolute_url(self):

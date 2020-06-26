@@ -20,7 +20,8 @@ urlpatterns = [path('update_technicien_info/', views.update_technicien_info),
                path('machine_search/', views.machine_search),
                path('client_name_and_id/', views.client_name_and_id),
                path('update_machine_info/', views.update_machine_info),
-               path('update_case_info/', views.update_case_info)
+               path('update_case_info/', views.update_case_info),
+               path('machine_search_client/', views.machine_search_client)
 
                ]
 urlpatterns += router.urls

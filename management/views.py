@@ -30,7 +30,7 @@ class MachineViewSet(viewsets.ModelViewSet):
     queryset = Machine.objects.all()
     serializer_class = MachineSerializer
     filter_backends = (SearchFilter, OrderingFilter)
-    search_fields = ['machineid', 'producttype','mac','main_pack__packagecode']
+    search_fields = ['machineid', 'producttype', 'mac', 'main_pack__packagecode']
 
     def get_permissions(self):
         """
@@ -64,6 +64,28 @@ def machine_search(request):
     for i in test:
         i["user"] = Profile.objects.get(pk=i["user"]).user.username
         print("{}".format(i["user"]))
+    return Response(serializer.data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@transaction.atomic
+def machine_search_client(request):
+    search = request.GET.get('search', '')
+    username = request.user
+
+    user = User.objects.get(username=username)
+
+    queryset = list(Machine.objects.filter(user=user.profile, machineid__icontains=search))
+    queryset.extend(list(Machine.objects.filter(user=user.profile, mac__icontains=search)))
+    queryset.extend(list(Machine.objects.filter(user=user.profile, producttype__icontains=search)))
+    queryset.extend(list(Machine.objects.filter(user=user.profile, price__icontains=search)))
+    queryset.extend(list(Machine.objects.filter(user=user.profile, installdate__icontains=search)))
+    queryset.extend(list(Machine.objects.filter(user=user.profile, nextservicedate__icontains=search)))
+
+    queryset = list(dict.fromkeys(queryset))  # remounve deplicated items
+    serializer = MachineSerializer(queryset, many=True)
+
     return Response(serializer.data)
 
 
@@ -123,7 +145,7 @@ def update_case_info(request):
 
     except KeyError:
         raise serializers.ValidationError({'error': "please make suuuuure to fill all informations"})
-    if case_id == "" or scheduledate == "" or time == "" or iscompleted=="":
+    if case_id == "" or scheduledate == "" or time == "" or iscompleted == "":
         raise serializers.ValidationError({'error': "please make s to fill all informations"})
     try:
         case = Case.objects.get(case_id=case_id)
@@ -135,7 +157,7 @@ def update_case_info(request):
     case.time = time
     case.iscompleted = iscompleted
     case.action = action
-    case.suggest=suggest
+    case.suggest = suggest
     case.comment = comment
     case.save()
     serializer = CaseSerializer(case)

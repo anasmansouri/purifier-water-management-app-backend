@@ -30,7 +30,7 @@ class MachineViewSet(viewsets.ModelViewSet):
     queryset = Machine.objects.all()
     serializer_class = MachineSerializer
     filter_backends = (SearchFilter, OrderingFilter)
-    search_fields = ['machineid', 'producttype', 'mac', 'main_pack']
+    search_fields = ['machineid', 'producttype','mac','main_pack__packagecode']
 
     def get_permissions(self):
         """

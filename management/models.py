@@ -73,7 +73,6 @@ class Case(models.Model):
     suggest = models.TextField(max_length=100, blank=True)
     comment = models.TextField(max_length=100, blank=True)
     iscompleted = models.BooleanField(default=False, blank=True)
-    # user = models.ForeignKey(User, on_delete=models.CASCADE)
     filters = models.ManyToManyField(Filter, blank=True)
     handledby = models.ForeignKey(Technician, on_delete=models.CASCADE)
 

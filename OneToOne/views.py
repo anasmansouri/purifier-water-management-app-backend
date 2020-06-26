@@ -193,7 +193,7 @@ def forgotpassword(request):
         raise serializers.ValidationError({'error': "make sure that the username and the invitation code are correct"})
 
     code = str(random.randint(1000, 999999999))
-    send_mail('hello from osmosis', "this is your password" + code + "  now change it when you login in ",
+    send_mail('hello from osmosis', "this is your password " + code + "  now change it when you login in ",
               'osmosis.testing.app@gmail.com',
               [profile.user.email],
               fail_silently=False)

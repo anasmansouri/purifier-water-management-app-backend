@@ -21,7 +21,7 @@ urlpatterns = [path('update_technicien_info/', views.update_technicien_info),
                path('client_name_and_id/', views.client_name_and_id),
                path('update_machine_info/', views.update_machine_info),
                path('update_case_info/', views.update_case_info),
-               path('machine_search_client/', views.machine_search_client)
-
+               path('machine_search_client/', views.machine_search_client),
+               path('update_main_pack_price/', views.update_main_pack_price)
                ]
 urlpatterns += router.urls

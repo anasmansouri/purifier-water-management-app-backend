@@ -199,6 +199,34 @@ def update_main_pack_info(request):
     return Response(serializer.data)
 
 
+@api_view(['PUT'])
+@permission_classes([IsAdminUser])
+@transaction.atomic
+def update_main_pack_price(request):
+    packagecode = ""
+    price = ""
+    try:
+        packagecode = request.data["packagecode"]
+        price = request.data["price"]
+    except KeyError:
+        raise serializers.ValidationError({'error': "please make sure to fill all informations"})
+    if packagecode == "" or price == "":
+        raise serializers.ValidationError({'error': "please make sure to fill all informations"})
+    try:
+        main_pack = MainPack.objects.get(packagecode=packagecode)
+
+    except  ObjectDoesNotExist:
+        raise serializers.ValidationError({'error': "make sure that the packagecode is correct"})
+
+    main_pack.price = main_pack.price + price
+    main_pack.save()
+    serializer = MainPackSerializer(main_pack)
+    return Response(serializer.data)
+
+
+
+
+
 class MainPackViewSet(viewsets.ViewSet):
     """
     A simple ViewSet for listing or retrieving users.

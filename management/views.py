@@ -419,7 +419,7 @@ class FilterViewSet(viewsets.ViewSet):
         except  KeyError:
             raise serializers.ValidationError({'error': "please enter the filtercode of the Filter"})
 
-        if Technician.objects.filter(
+        if Filter.objects.filter(
                 staffcode=request.data["filtercode"]).exists():
             raise serializers.ValidationError(
                 {'error': "there is already another Filter with the same filter code"})
